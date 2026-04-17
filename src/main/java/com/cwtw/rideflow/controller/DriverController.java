@@ -36,4 +36,16 @@ public class DriverController {
     public ResponseEntity<List<DriverDTO>> getAllDrivers() {
         return ResponseEntity.ok(driverService.getAllDrivers());
     }
+
+    @PatchMapping("/{driverId}/vehicles/{vehicleId}/details")
+    public ResponseEntity<DriverDTO> updateVehicleDetails(
+            @PathVariable Long driverId,
+            @PathVariable Long vehicleId,
+            @RequestBody Map<String, String> body) {
+        return ResponseEntity.ok(driverService.updateAssignedVehicleDetails(
+                driverId,
+                vehicleId,
+                body.get("model"),
+                body.get("status")));
+    }
 }

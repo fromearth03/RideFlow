@@ -38,7 +38,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
+                    .requestMatchers("/auth/login", "/auth/register", "/auth/register/admin", "/auth/register/driver").permitAll()
+                    .requestMatchers("/auth/register/dispatcher").hasRole("ADMIN")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/dispatcher/**").hasAnyRole("DISPATCHER", "ADMIN")
                         .requestMatchers("/customer/**").hasAnyRole("CUSTOMER", "ADMIN")

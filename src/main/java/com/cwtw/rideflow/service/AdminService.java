@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class AdminService {
@@ -53,6 +54,24 @@ public class AdminService {
         return vehicleRepository.findAll();
     }
 
+    @Transactional
+    public Vehicle disableVehicle(Long vehicleId) {
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new CustomException("Vehicle not found", HttpStatus.NOT_FOUND));
+
+        vehicle.setStatus("INACTIVE");
+        return vehicleRepository.save(vehicle);
+    }
+
+    @Transactional
+    public Vehicle enableVehicle(Long vehicleId) {
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new CustomException("Vehicle not found", HttpStatus.NOT_FOUND));
+
+        vehicle.setStatus("ACTIVE");
+        return vehicleRepository.save(vehicle);
+    }
+
     public MaintenanceRecord addMaintenanceRecord(Long vehicleId, String description) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new CustomException("Vehicle not found", HttpStatus.NOT_FOUND));
@@ -81,7 +100,12 @@ public class AdminService {
         driverRepository.findAll().stream()
                 .filter(d -> d.getUser().getId().equals(userId))
                 .findFirst()
-                .ifPresent(driverRepository::delete);
+                .ifPresent(driver -> {
+                    List<Vehicle> assignedVehicles = vehicleRepository.findByDriverId(driver.getId());
+                    assignedVehicles.forEach(vehicle -> vehicle.setDriver(null));
+                    vehicleRepository.saveAll(assignedVehicles);
+                    driverRepository.delete(driver);
+                });
 
         dispatcherRepository.findAll().stream()
                 .filter(d -> d.getUser().getId().equals(userId))
@@ -108,6 +132,11 @@ public class AdminService {
     public void deleteDriver(Long driverId) {
         Driver driver = driverRepository.findById(driverId)
                 .orElseThrow(() -> new CustomException("Driver not found", HttpStatus.NOT_FOUND));
+
+        List<Vehicle> assignedVehicles = vehicleRepository.findByDriverId(driverId);
+        assignedVehicles.forEach(vehicle -> vehicle.setDriver(null));
+        vehicleRepository.saveAll(assignedVehicles);
+
         driverRepository.delete(driver);
     }
 
@@ -116,6 +145,47 @@ public class AdminService {
                 .orElseThrow(() -> new CustomException("Driver not found", HttpStatus.NOT_FOUND));
         driver.setApproved(true);
         driverRepository.save(driver);
+        return toDriverDTO(driver);
+    }
+
+    @Transactional
+    public DriverDTO assignVehicleToDriver(Long driverId, Long vehicleId) {
+        Driver driver = driverRepository.findById(driverId)
+                .orElseThrow(() -> new CustomException("Driver not found", HttpStatus.NOT_FOUND));
+
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new CustomException("Vehicle not found", HttpStatus.NOT_FOUND));
+
+        if (vehicle.getDriver() != null && !vehicle.getDriver().getId().equals(driverId)) {
+            throw new CustomException("Vehicle is already assigned to another driver", HttpStatus.CONFLICT);
+        }
+
+        vehicle.setDriver(driver);
+        vehicleRepository.save(vehicle);
+        return toDriverDTO(driver);
+    }
+
+    @Transactional
+    public DriverDTO unassignVehicleFromDriver(Long driverId) {
+        Driver driver = driverRepository.findById(driverId)
+                .orElseThrow(() -> new CustomException("Driver not found", HttpStatus.NOT_FOUND));
+
+        List<Vehicle> assignedVehicles = vehicleRepository.findByDriverId(driverId);
+        assignedVehicles.forEach(vehicle -> vehicle.setDriver(null));
+        vehicleRepository.saveAll(assignedVehicles);
+        return toDriverDTO(driver);
+    }
+
+    @Transactional
+    public DriverDTO unassignSpecificVehicleFromDriver(Long driverId, Long vehicleId) {
+        Driver driver = driverRepository.findById(driverId)
+                .orElseThrow(() -> new CustomException("Driver not found", HttpStatus.NOT_FOUND));
+
+        Vehicle vehicle = vehicleRepository.findByIdAndDriverId(vehicleId, driverId)
+                .orElseThrow(() -> new CustomException("Vehicle is not assigned to this driver", HttpStatus.NOT_FOUND));
+
+        vehicle.setDriver(null);
+        vehicleRepository.save(vehicle);
         return toDriverDTO(driver);
     }
 
@@ -160,6 +230,10 @@ public class AdminService {
     // ── Mappers ───────────────────────────────────────────────────────────────
 
     private DriverDTO toDriverDTO(Driver d) {
+        List<Vehicle> assignedVehicles = vehicleRepository.findByDriverId(d.getId());
+        List<Long> vehicleIds = assignedVehicles.stream().map(Vehicle::getId).collect(Collectors.toList());
+        List<String> vehicleModels = assignedVehicles.stream().map(Vehicle::getModel).collect(Collectors.toList());
+
         return DriverDTO.builder()
                 .id(d.getId())
                 .userId(d.getUser().getId())
@@ -167,6 +241,8 @@ public class AdminService {
                 .licenseNumber(d.getLicenseNumber())
                 .isAvailable(d.isAvailable())
                 .approved(d.isApproved())
+                .vehicleIds(vehicleIds)
+                .vehicleModels(vehicleModels)
                 .build();
     }
 

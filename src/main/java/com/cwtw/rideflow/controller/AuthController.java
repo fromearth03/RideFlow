@@ -2,6 +2,7 @@ package com.cwtw.rideflow.controller;
 
 import com.cwtw.rideflow.dto.AuthRequestDTO;
 import com.cwtw.rideflow.dto.AuthResponseDTO;
+import com.cwtw.rideflow.dto.DriverRegisterRequestDTO;
 import com.cwtw.rideflow.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -23,18 +24,22 @@ public class AuthController {
     }
 
     @PostMapping("/register/driver")
-    public ResponseEntity<AuthResponseDTO> registerDriver(@Valid @RequestBody AuthRequestDTO request) {
-        return ResponseEntity.ok(authService.register(request, "ROLE_DRIVER"));
+    public ResponseEntity<AuthResponseDTO> registerDriver(
+            @Valid @RequestBody DriverRegisterRequestDTO request) {
+        return ResponseEntity.ok(authService.registerDriver(request));
     }
 
     @PostMapping("/register/dispatcher")
-    public ResponseEntity<AuthResponseDTO> registerDispatcher(@Valid @RequestBody AuthRequestDTO request) {
+    public ResponseEntity<AuthResponseDTO> registerDispatcher(
+            @Valid @RequestBody AuthRequestDTO request) {
         return ResponseEntity.ok(authService.register(request, "ROLE_DISPATCHER"));
     }
 
     @PostMapping("/register/admin")
-    public ResponseEntity<AuthResponseDTO> registerAdmin(@Valid @RequestBody AuthRequestDTO request) {
-        return ResponseEntity.ok(authService.register(request, "ROLE_ADMIN"));
+    public ResponseEntity<AuthResponseDTO> registerAdmin(
+            @RequestHeader("X-Admin-Secret-Key") String adminSecretKey,
+            @Valid @RequestBody AuthRequestDTO request) {
+        return ResponseEntity.ok(authService.registerWithAdminKey(request, "ROLE_ADMIN", adminSecretKey));
     }
 
     @PostMapping("/login")

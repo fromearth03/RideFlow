@@ -50,7 +50,7 @@ com.cwtw.rideflow
 │   └── SecurityConfig.java         → Spring Security filter chain, CSRF off, JWT filter
 │
 ├── controller/
-│   ├── AuthController.java         → /auth/** (public)
+│   ├── AuthController.java         → /auth/** (public login + customer register, admin-protected elevated register)
 │   ├── RideController.java         → /rides/**
 │   ├── DriverController.java       → /drivers/**
 │   ├── DispatcherController.java   → /dispatcher/**
@@ -255,7 +255,13 @@ Does request have "Authorization: Bearer xxx" header?
 // Session: STATELESS (no HttpSession created or used)
 
 // Public routes (no token needed):
-//   /auth/**   → all registration and login endpoints
+//   /auth/login, /auth/register
+
+// Admin-only registration routes:
+//   /auth/register/admin
+//   /auth/register/dispatcher
+//   /auth/register/driver
+//   (requires ROLE_ADMIN + X-Admin-Secret-Key header)
 
 // Protected routes (valid JWT required):
 //   everything else → authenticated()
@@ -298,7 +304,7 @@ loadUserByUsername(String email)
 
 ## 5. Authentication Endpoints (`/auth`)
 
-> ✅ No token required for any endpoint in this section.
+> ✅ No token required only for `/auth/login` and `/auth/register`.
 > ✅ CSRF is disabled — no CSRF token needed.
 
 ---
@@ -353,6 +359,10 @@ Content-Type: application/json
 
 **Purpose:** Register a new user with the `ROLE_DRIVER` role.
 
+**Access Control:**
+- Requires a valid admin JWT (`Authorization: Bearer <admin-token>`)
+- Requires header `X-Admin-Secret-Key: <value of admin.secret>`
+
 Identical request and error handling to `/auth/register`. The only difference is the role in the response.
 
 **Success Response — `200 OK`**
@@ -371,6 +381,10 @@ Identical request and error handling to `/auth/register`. The only difference is
 
 **Purpose:** Register with `ROLE_DISPATCHER`.
 
+**Access Control:**
+- Requires a valid admin JWT (`Authorization: Bearer <admin-token>`)
+- Requires header `X-Admin-Secret-Key: <value of admin.secret>`
+
 **Success Response — `200 OK`**
 ```json
 {
@@ -384,6 +398,10 @@ Identical request and error handling to `/auth/register`. The only difference is
 ### `POST /auth/register/admin`
 
 **Purpose:** Register with `ROLE_ADMIN`.
+
+**Access Control:**
+- Requires a valid admin JWT (`Authorization: Bearer <admin-token>`)
+- Requires header `X-Admin-Secret-Key: <value of admin.secret>`
 
 **Success Response — `200 OK`**
 ```json
@@ -1338,9 +1356,9 @@ Must be ISO 8601 — `"2026-04-15T10:30:00"` (no timezone suffix, treated as ser
 | # | Method | Endpoint | Auth | What it Does |
 |---|--------|----------|------|-------------|
 | 1 | POST | `/auth/register` | ❌ | Register new CUSTOMER, returns JWT |
-| 2 | POST | `/auth/register/driver` | ❌ | Register new DRIVER user, returns JWT |
-| 3 | POST | `/auth/register/dispatcher` | ❌ | Register new DISPATCHER, returns JWT |
-| 4 | POST | `/auth/register/admin` | ❌ | Register new ADMIN, returns JWT |
+| 2 | POST | `/auth/register/driver` | ✅ (ADMIN + key) | Register new DRIVER user, returns JWT |
+| 3 | POST | `/auth/register/dispatcher` | ✅ (ADMIN + key) | Register new DISPATCHER, returns JWT |
+| 4 | POST | `/auth/register/admin` | ✅ (ADMIN + key) | Register new ADMIN, returns JWT |
 | 5 | POST | `/auth/login` | ❌ | Login any user, returns JWT |
 | 6 | POST | `/rides` | ✅ | Create a ride (PENDING, no driver) |
 | 7 | GET | `/rides` | ✅ | Get all rides |

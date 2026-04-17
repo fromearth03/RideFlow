@@ -38,6 +38,16 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getAllVehicles());
     }
 
+    @PatchMapping("/vehicles/{vehicleId}/disable")
+    public ResponseEntity<Vehicle> disableVehicle(@PathVariable Long vehicleId) {
+        return ResponseEntity.ok(adminService.disableVehicle(vehicleId));
+    }
+
+    @PatchMapping("/vehicles/{vehicleId}/enable")
+    public ResponseEntity<Vehicle> enableVehicle(@PathVariable Long vehicleId) {
+        return ResponseEntity.ok(adminService.enableVehicle(vehicleId));
+    }
+
     @PostMapping("/vehicles/{vehicleId}/maintenance")
     public ResponseEntity<MaintenanceRecord> addMaintenanceRecord(
             @PathVariable Long vehicleId,
@@ -74,6 +84,25 @@ public class AdminController {
     @PatchMapping("/drivers/{driverId}/approve")
     public ResponseEntity<DriverDTO> approveDriver(@PathVariable Long driverId) {
         return ResponseEntity.ok(adminService.approveDriver(driverId));
+    }
+
+    @PatchMapping("/drivers/{driverId}/vehicle/{vehicleId}")
+    public ResponseEntity<DriverDTO> assignVehicleToDriver(
+            @PathVariable Long driverId,
+            @PathVariable Long vehicleId) {
+        return ResponseEntity.ok(adminService.assignVehicleToDriver(driverId, vehicleId));
+    }
+
+    @DeleteMapping("/drivers/{driverId}/vehicle")
+    public ResponseEntity<DriverDTO> unassignVehicleFromDriver(@PathVariable Long driverId) {
+        return ResponseEntity.ok(adminService.unassignVehicleFromDriver(driverId));
+    }
+
+    @DeleteMapping("/drivers/{driverId}/vehicle/{vehicleId}")
+    public ResponseEntity<DriverDTO> unassignSpecificVehicleFromDriver(
+            @PathVariable Long driverId,
+            @PathVariable Long vehicleId) {
+        return ResponseEntity.ok(adminService.unassignSpecificVehicleFromDriver(driverId, vehicleId));
     }
 
     // ── Dispatchers ───────────────────────────────────────────────────────────

@@ -1,0 +1,3 @@
+ALTER TABLE vehicles
+    ALTER COLUMN model DROP NOT NULL,
+    ALTER COLUMN status DROP NOT NULL;

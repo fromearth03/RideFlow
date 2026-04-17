@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -18,4 +20,6 @@ public class DriverDTO {
     private String licenseNumber;
     private boolean isAvailable;
     private boolean approved;
+    private List<Long> vehicleIds;
+    private List<String> vehicleModels;
 }
