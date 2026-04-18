@@ -46,4 +46,9 @@ public class RideController {
     public ResponseEntity<List<RideResponseDTO>> getAllRides() {
         return ResponseEntity.ok(rideService.getAllRides());
     }
+
+    @GetMapping("/user/{userId}")
+    public ResponseEntity<List<RideResponseDTO>> getRidesByUserId(@PathVariable Long userId) {
+        return ResponseEntity.ok(rideService.getRidesByUserId(userId));
+    }
 }

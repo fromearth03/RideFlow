@@ -93,6 +93,16 @@ public class RideService {
                 .collect(Collectors.toList());
     }
 
+    public List<RideResponseDTO> getRidesByUserId(Long userId) {
+        if (!userRepository.existsById(userId)) {
+            throw new CustomException("User not found", HttpStatus.NOT_FOUND);
+        }
+
+        return rideRepository.findByUserId(userId).stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
     private RideResponseDTO mapToDTO(Ride ride) {
         return RideResponseDTO.builder()
                 .id(ride.getId())

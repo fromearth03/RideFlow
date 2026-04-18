@@ -79,7 +79,7 @@ public class AuthService {
         }
 
         String token = jwtService.generateToken(user.getEmail(), user.getRole());
-        return new AuthResponseDTO(token, user.getRole());
+        return new AuthResponseDTO(token, user.getRole(), user.getId());
     }
 
     @Transactional
@@ -132,7 +132,7 @@ public class AuthService {
         }
 
         String token = jwtService.generateToken(user.getEmail(), user.getRole());
-        return new AuthResponseDTO(token, user.getRole());
+        return new AuthResponseDTO(token, user.getRole(), user.getId());
     }
 
     @Transactional
@@ -150,7 +150,7 @@ public class AuthService {
         }
 
         String token = jwtService.generateToken(user.getEmail(), user.getRole());
-        return new AuthResponseDTO(token, user.getRole());
+        return new AuthResponseDTO(token, user.getRole(), user.getId());
     }
 
     private void validateAdminSecretKey(String providedAdminSecretKey) {

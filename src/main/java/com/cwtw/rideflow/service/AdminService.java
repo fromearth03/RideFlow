@@ -24,6 +24,7 @@ public class AdminService {
     private final DriverRepository driverRepository;
     private final DispatcherRepository dispatcherRepository;
     private final CustomerRepository customerRepository;
+        private final RideRepository rideRepository;
 
     public AdminService(
             VehicleRepository vehicleRepository,
@@ -31,13 +32,15 @@ public class AdminService {
             UserRepository userRepository,
             DriverRepository driverRepository,
             DispatcherRepository dispatcherRepository,
-            CustomerRepository customerRepository) {
+                        CustomerRepository customerRepository,
+                        RideRepository rideRepository) {
         this.vehicleRepository = vehicleRepository;
         this.maintenanceRecordRepository = maintenanceRecordRepository;
         this.userRepository = userRepository;
         this.driverRepository = driverRepository;
         this.dispatcherRepository = dispatcherRepository;
         this.customerRepository = customerRepository;
+                this.rideRepository = rideRepository;
     }
 
     // ── Vehicle ──────────────────────────────────────────────────────────────
@@ -111,11 +114,15 @@ public class AdminService {
         if (!userRepository.existsById(userId)) {
             throw new CustomException("User not found", HttpStatus.NOT_FOUND);
         }
+
+                detachRidesFromUser(userId);
+
         // Cascade: delete linked profile first if exists
         driverRepository.findAll().stream()
                 .filter(d -> d.getUser().getId().equals(userId))
                 .findFirst()
                 .ifPresent(driver -> {
+                                        detachRidesFromDriver(driver.getId());
                     List<Vehicle> assignedVehicles = vehicleRepository.findByDriverId(driver.getId());
                     assignedVehicles.forEach(vehicle -> vehicle.setDriver(null));
                     vehicleRepository.saveAll(assignedVehicles);
@@ -148,11 +155,17 @@ public class AdminService {
         Driver driver = driverRepository.findById(driverId)
                 .orElseThrow(() -> new CustomException("Driver not found", HttpStatus.NOT_FOUND));
 
+                Long userId = driver.getUser().getId();
+
+        detachRidesFromDriver(driverId);
+                detachRidesFromUser(userId);
+
         List<Vehicle> assignedVehicles = vehicleRepository.findByDriverId(driverId);
         assignedVehicles.forEach(vehicle -> vehicle.setDriver(null));
         vehicleRepository.saveAll(assignedVehicles);
 
         driverRepository.delete(driver);
+                userRepository.deleteById(userId);
     }
 
     public DriverDTO approveDriver(Long driverId) {
@@ -216,7 +229,11 @@ public class AdminService {
     public void deleteDispatcher(Long dispatcherId) {
         Dispatcher dispatcher = dispatcherRepository.findById(dispatcherId)
                 .orElseThrow(() -> new CustomException("Dispatcher not found", HttpStatus.NOT_FOUND));
+
+                Long userId = dispatcher.getUser().getId();
+
         dispatcherRepository.delete(dispatcher);
+                userRepository.deleteById(userId);
     }
 
     public DispatcherDTO approveDispatcher(Long dispatcherId) {
@@ -239,8 +256,32 @@ public class AdminService {
     public void deleteCustomer(Long customerId) {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new CustomException("Customer not found", HttpStatus.NOT_FOUND));
+
+                Long userId = customer.getUser().getId();
+
+                detachRidesFromUser(userId);
+
         customerRepository.delete(customer);
+                userRepository.deleteById(userId);
     }
+
+        private void detachRidesFromUser(Long userId) {
+                List<Ride> rides = rideRepository.findByUserId(userId);
+                if (rides.isEmpty()) {
+                        return;
+                }
+                rides.forEach(ride -> ride.setUser(null));
+                rideRepository.saveAll(rides);
+        }
+
+        private void detachRidesFromDriver(Long driverId) {
+                List<Ride> rides = rideRepository.findByDriverId(driverId);
+                if (rides.isEmpty()) {
+                        return;
+                }
+                rides.forEach(ride -> ride.setDriver(null));
+                rideRepository.saveAll(rides);
+        }
 
     // ── Mappers ───────────────────────────────────────────────────────────────
 
