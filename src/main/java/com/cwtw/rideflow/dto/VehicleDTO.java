@@ -11,11 +11,15 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RideResponseDTO {
+public class VehicleDTO {
     private Long id;
-    private String pickupLocation;
-    private String dropLocation;
-    private boolean interCity;
+    private String plateNumber;
+    private String model;
     private String status;
     private Long driverId;
+    private Long assignedDriverId;
+    private String driverEmail;
+    private String assignedDriverEmail;
+    private String driverName;
+    private String assignedDriverName;
 }

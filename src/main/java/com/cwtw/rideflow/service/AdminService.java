@@ -3,6 +3,7 @@ package com.cwtw.rideflow.service;
 import com.cwtw.rideflow.dto.CustomerDTO;
 import com.cwtw.rideflow.dto.DispatcherDTO;
 import com.cwtw.rideflow.dto.DriverDTO;
+import com.cwtw.rideflow.dto.VehicleDTO;
 import com.cwtw.rideflow.exception.CustomException;
 import com.cwtw.rideflow.model.*;
 import com.cwtw.rideflow.repository.*;
@@ -41,35 +42,49 @@ public class AdminService {
 
     // ── Vehicle ──────────────────────────────────────────────────────────────
 
-    public Vehicle addVehicle(String plateNumber, String model, String status) {
+    public VehicleDTO addVehicle(String plateNumber, String model, String status) {
         Vehicle vehicle = Vehicle.builder()
                 .plateNumber(plateNumber)
                 .model(model)
                 .status(status != null ? status : "ACTIVE")
                 .build();
-        return vehicleRepository.save(vehicle);
+        return toVehicleDTO(vehicleRepository.save(vehicle));
     }
 
-    public List<Vehicle> getAllVehicles() {
-        return vehicleRepository.findAll();
+    public List<VehicleDTO> getAllVehicles() {
+        return vehicleRepository.findAll().stream()
+                .map(this::toVehicleDTO)
+                .toList();
     }
 
     @Transactional
-    public Vehicle disableVehicle(Long vehicleId) {
+    public void deleteVehicle(Long vehicleId) {
+        Vehicle vehicle = vehicleRepository.findById(vehicleId)
+                .orElseThrow(() -> new CustomException("Vehicle not found", HttpStatus.NOT_FOUND));
+
+        vehicle.setDriver(null);
+        vehicleRepository.save(vehicle);
+
+        maintenanceRecordRepository.deleteByVehicleId(vehicleId);
+        vehicleRepository.delete(vehicle);
+    }
+
+    @Transactional
+    public VehicleDTO disableVehicle(Long vehicleId) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new CustomException("Vehicle not found", HttpStatus.NOT_FOUND));
 
         vehicle.setStatus("INACTIVE");
-        return vehicleRepository.save(vehicle);
+        return toVehicleDTO(vehicleRepository.save(vehicle));
     }
 
     @Transactional
-    public Vehicle enableVehicle(Long vehicleId) {
+    public VehicleDTO enableVehicle(Long vehicleId) {
         Vehicle vehicle = vehicleRepository.findById(vehicleId)
                 .orElseThrow(() -> new CustomException("Vehicle not found", HttpStatus.NOT_FOUND));
 
         vehicle.setStatus("ACTIVE");
-        return vehicleRepository.save(vehicle);
+        return toVehicleDTO(vehicleRepository.save(vehicle));
     }
 
     public MaintenanceRecord addMaintenanceRecord(Long vehicleId, String description) {
@@ -261,6 +276,26 @@ public class AdminService {
                 .userId(c.getUser().getId())
                 .email(c.getUser().getEmail())
                 .phoneNumber(c.getPhoneNumber())
+                .build();
+    }
+
+    private VehicleDTO toVehicleDTO(Vehicle vehicle) {
+        Long assignedDriverId = vehicle.getDriver() != null ? vehicle.getDriver().getId() : null;
+        String assignedDriverEmail = vehicle.getDriver() != null && vehicle.getDriver().getUser() != null
+                ? vehicle.getDriver().getUser().getEmail()
+                : null;
+
+        return VehicleDTO.builder()
+                .id(vehicle.getId())
+                .plateNumber(vehicle.getPlateNumber())
+                .model(vehicle.getModel())
+                .status(vehicle.getStatus())
+                .driverId(assignedDriverId)
+                .assignedDriverId(assignedDriverId)
+                .driverEmail(assignedDriverEmail)
+                .assignedDriverEmail(assignedDriverEmail)
+                .driverName(assignedDriverEmail)
+                .assignedDriverName(assignedDriverEmail)
                 .build();
     }
 }

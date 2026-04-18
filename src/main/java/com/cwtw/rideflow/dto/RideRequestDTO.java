@@ -23,4 +23,6 @@ public class RideRequestDTO {
 
     @NotNull(message = "Scheduled time is required")
     private LocalDateTime scheduledTime;
+
+    private Boolean interCity;
 }

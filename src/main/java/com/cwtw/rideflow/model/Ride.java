@@ -27,6 +27,9 @@ public class Ride {
     private LocalDateTime scheduledTime;
 
     @Column(nullable = false)
+    private boolean interCity;
+
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private RideStatus status;
 

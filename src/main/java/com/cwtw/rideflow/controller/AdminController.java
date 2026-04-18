@@ -3,9 +3,9 @@ package com.cwtw.rideflow.controller;
 import com.cwtw.rideflow.dto.CustomerDTO;
 import com.cwtw.rideflow.dto.DispatcherDTO;
 import com.cwtw.rideflow.dto.DriverDTO;
+import com.cwtw.rideflow.dto.VehicleDTO;
 import com.cwtw.rideflow.model.MaintenanceRecord;
 import com.cwtw.rideflow.model.User;
-import com.cwtw.rideflow.model.Vehicle;
 import com.cwtw.rideflow.service.AdminService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,7 +26,7 @@ public class AdminController {
     // ── Vehicle ──────────────────────────────────────────────────────────────
 
     @PostMapping("/vehicles")
-    public ResponseEntity<Vehicle> addVehicle(@RequestBody Map<String, String> body) {
+    public ResponseEntity<VehicleDTO> addVehicle(@RequestBody Map<String, String> body) {
         return ResponseEntity.ok(adminService.addVehicle(
                 body.get("plateNumber"),
                 body.get("model"),
@@ -34,17 +34,23 @@ public class AdminController {
     }
 
     @GetMapping("/vehicles")
-    public ResponseEntity<List<Vehicle>> getAllVehicles() {
+    public ResponseEntity<List<VehicleDTO>> getAllVehicles() {
         return ResponseEntity.ok(adminService.getAllVehicles());
     }
 
+    @DeleteMapping("/vehicles/{vehicleId}")
+    public ResponseEntity<Void> deleteVehicle(@PathVariable Long vehicleId) {
+        adminService.deleteVehicle(vehicleId);
+        return ResponseEntity.noContent().build();
+    }
+
     @PatchMapping("/vehicles/{vehicleId}/disable")
-    public ResponseEntity<Vehicle> disableVehicle(@PathVariable Long vehicleId) {
+    public ResponseEntity<VehicleDTO> disableVehicle(@PathVariable Long vehicleId) {
         return ResponseEntity.ok(adminService.disableVehicle(vehicleId));
     }
 
     @PatchMapping("/vehicles/{vehicleId}/enable")
-    public ResponseEntity<Vehicle> enableVehicle(@PathVariable Long vehicleId) {
+    public ResponseEntity<VehicleDTO> enableVehicle(@PathVariable Long vehicleId) {
         return ResponseEntity.ok(adminService.enableVehicle(vehicleId));
     }
 

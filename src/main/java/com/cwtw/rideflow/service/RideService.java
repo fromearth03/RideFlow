@@ -37,6 +37,7 @@ public class RideService {
                 .pickupLocation(request.getPickupLocation())
                 .dropLocation(request.getDropLocation())
                 .scheduledTime(request.getScheduledTime())
+            .interCity(Boolean.TRUE.equals(request.getInterCity()))
                 .status(Ride.RideStatus.PENDING)
                 .user(user)
                 .build();
@@ -97,6 +98,7 @@ public class RideService {
                 .id(ride.getId())
                 .pickupLocation(ride.getPickupLocation())
                 .dropLocation(ride.getDropLocation())
+            .interCity(ride.isInterCity())
                 .status(ride.getStatus().name())
                 .driverId(ride.getDriver() != null ? ride.getDriver().getId() : null)
                 .build();
