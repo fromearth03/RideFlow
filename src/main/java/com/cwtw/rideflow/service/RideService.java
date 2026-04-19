@@ -30,8 +30,10 @@ public class RideService {
     }
 
     public RideResponseDTO createRide(RideRequestDTO request, String userEmail) {
-        User user = userRepository.findByEmail(userEmail)
-                .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
+        User actor = userRepository.findByEmail(userEmail)
+            .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
+
+        User rideUser = resolveRideUser(request.getCustomerUserId(), actor);
 
         Ride ride = Ride.builder()
                 .pickupLocation(request.getPickupLocation())
@@ -39,7 +41,7 @@ public class RideService {
                 .scheduledTime(request.getScheduledTime())
             .interCity(Boolean.TRUE.equals(request.getInterCity()))
                 .status(Ride.RideStatus.PENDING)
-                .user(user)
+            .user(rideUser)
                 .build();
 
         rideRepository.save(ride);
@@ -101,6 +103,35 @@ public class RideService {
         return rideRepository.findByUserId(userId).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    private User resolveRideUser(Long requestedCustomerUserId, User actor) {
+        String actorRole = actor.getRole();
+
+        if (requestedCustomerUserId != null) {
+            User requestedUser = userRepository.findById(requestedCustomerUserId)
+                    .orElseThrow(() -> new CustomException("Target customer user not found", HttpStatus.NOT_FOUND));
+
+            if (!"ROLE_CUSTOMER".equals(requestedUser.getRole())) {
+                throw new CustomException("Target user must be a customer", HttpStatus.BAD_REQUEST);
+            }
+
+            if ("ROLE_CUSTOMER".equals(actorRole) && !actor.getId().equals(requestedCustomerUserId)) {
+                throw new CustomException("Customers can only create rides for themselves", HttpStatus.FORBIDDEN);
+            }
+
+            return requestedUser;
+        }
+
+        if ("ROLE_CUSTOMER".equals(actorRole)) {
+            return actor;
+        }
+
+        if ("ROLE_DISPATCHER".equals(actorRole) || "ROLE_ADMIN".equals(actorRole)) {
+            throw new CustomException("customerUserId is required when creating rides as dispatcher/admin", HttpStatus.BAD_REQUEST);
+        }
+
+        throw new CustomException("Only customers, dispatchers, or admins can create rides", HttpStatus.FORBIDDEN);
     }
 
     private RideResponseDTO mapToDTO(Ride ride) {

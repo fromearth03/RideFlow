@@ -25,4 +25,6 @@ public class RideRequestDTO {
     private LocalDateTime scheduledTime;
 
     private Boolean interCity;
+
+    private Long customerUserId;
 }

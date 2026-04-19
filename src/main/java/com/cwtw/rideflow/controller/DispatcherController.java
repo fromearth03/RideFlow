@@ -1,5 +1,6 @@
 package com.cwtw.rideflow.controller;
 
+import com.cwtw.rideflow.dto.CustomerDTO;
 import com.cwtw.rideflow.dto.DispatcherDTO;
 import com.cwtw.rideflow.dto.RideRequestDTO;
 import com.cwtw.rideflow.dto.RideResponseDTO;
@@ -9,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/dispatcher")
@@ -25,6 +28,11 @@ public class DispatcherController {
     @GetMapping("/profile")
     public ResponseEntity<DispatcherDTO> getProfile(@AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(dispatcherService.getDispatcherProfile(userDetails.getUsername()));
+    }
+
+    @GetMapping("/customers")
+    public ResponseEntity<List<CustomerDTO>> getAllCustomers() {
+        return ResponseEntity.ok(dispatcherService.getAllCustomers());
     }
 
     // ── Ride dispatching ──────────────────────────────────────────────────────

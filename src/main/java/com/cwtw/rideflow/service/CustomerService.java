@@ -60,6 +60,12 @@ public class CustomerService {
                 .collect(Collectors.toList());
     }
 
+    public Long getCustomerUserIdByEmail(String email) {
+        Customer customer = customerRepository.findByUserEmail(email)
+                .orElseThrow(() -> new CustomException("Customer not found", HttpStatus.NOT_FOUND));
+        return customer.getUser().getId();
+    }
+
     public void deleteCustomer(Long customerId) {
         Customer customer = customerRepository.findById(customerId)
                 .orElseThrow(() -> new CustomException("Customer not found", HttpStatus.NOT_FOUND));

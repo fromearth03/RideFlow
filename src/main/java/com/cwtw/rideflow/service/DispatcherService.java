@@ -1,9 +1,12 @@
 package com.cwtw.rideflow.service;
 
+import com.cwtw.rideflow.dto.CustomerDTO;
 import com.cwtw.rideflow.dto.DispatcherDTO;
 import com.cwtw.rideflow.exception.CustomException;
+import com.cwtw.rideflow.model.Customer;
 import com.cwtw.rideflow.model.Dispatcher;
 import com.cwtw.rideflow.model.User;
+import com.cwtw.rideflow.repository.CustomerRepository;
 import com.cwtw.rideflow.repository.DispatcherRepository;
 import com.cwtw.rideflow.repository.UserRepository;
 import org.springframework.http.HttpStatus;
@@ -16,16 +19,19 @@ import java.util.stream.Collectors;
 public class DispatcherService {
 
     private final DispatcherRepository dispatcherRepository;
+    private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
     private final RideService rideService;
     private final com.cwtw.rideflow.repository.DriverRepository driverRepository;
 
     public DispatcherService(
             DispatcherRepository dispatcherRepository,
+            CustomerRepository customerRepository,
             UserRepository userRepository,
             RideService rideService,
             com.cwtw.rideflow.repository.DriverRepository driverRepository) {
         this.dispatcherRepository = dispatcherRepository;
+        this.customerRepository = customerRepository;
         this.userRepository = userRepository;
         this.rideService = rideService;
         this.driverRepository = driverRepository;
@@ -48,6 +54,12 @@ public class DispatcherService {
             throw new CustomException("No available drivers at the moment", HttpStatus.NOT_FOUND);
         }
         return rideService.assignDriver(rideId, availableDrivers.get(0).getId());
+    }
+
+    public List<CustomerDTO> getAllCustomers() {
+        return customerRepository.findAll().stream()
+                .map(this::mapCustomerToDTO)
+                .collect(Collectors.toList());
     }
 
     // --- Dispatcher profile operations ---
@@ -92,6 +104,15 @@ public class DispatcherService {
                 .userId(dispatcher.getUser().getId())
                 .email(dispatcher.getUser().getEmail())
                 .approved(dispatcher.isApproved())
+                .build();
+    }
+
+    private CustomerDTO mapCustomerToDTO(Customer customer) {
+        return CustomerDTO.builder()
+                .id(customer.getId())
+                .userId(customer.getUser().getId())
+                .email(customer.getUser().getEmail())
+                .phoneNumber(customer.getPhoneNumber())
                 .build();
     }
 }
