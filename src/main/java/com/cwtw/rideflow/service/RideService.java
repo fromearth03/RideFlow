@@ -33,12 +33,13 @@ public class RideService {
         User actor = userRepository.findByEmail(userEmail)
             .orElseThrow(() -> new CustomException("User not found", HttpStatus.NOT_FOUND));
 
-        User rideUser = resolveRideUser(request.getCustomerUserId(), actor);
+        User rideUser = resolveRideUser(request.getCustomerUserId(), request.getCustomerEmail(), actor);
 
         Ride ride = Ride.builder()
                 .pickupLocation(request.getPickupLocation())
                 .dropLocation(request.getDropLocation())
                 .scheduledTime(request.getScheduledTime())
+                .fare(request.getFare())
             .interCity(Boolean.TRUE.equals(request.getInterCity()))
                 .status(Ride.RideStatus.PENDING)
             .user(rideUser)
@@ -105,7 +106,7 @@ public class RideService {
                 .collect(Collectors.toList());
     }
 
-    private User resolveRideUser(Long requestedCustomerUserId, User actor) {
+    private User resolveRideUser(Long requestedCustomerUserId, String requestedCustomerEmail, User actor) {
         String actorRole = actor.getRole();
 
         if (requestedCustomerUserId != null) {
@@ -123,12 +124,27 @@ public class RideService {
             return requestedUser;
         }
 
+        if (requestedCustomerEmail != null && !requestedCustomerEmail.isBlank()) {
+            User requestedUser = userRepository.findByEmail(requestedCustomerEmail.trim())
+                    .orElseThrow(() -> new CustomException("Target customer user not found", HttpStatus.NOT_FOUND));
+
+            if (!"ROLE_CUSTOMER".equals(requestedUser.getRole())) {
+                throw new CustomException("Target user must be a customer", HttpStatus.BAD_REQUEST);
+            }
+
+            if ("ROLE_CUSTOMER".equals(actorRole) && !actor.getEmail().equalsIgnoreCase(requestedCustomerEmail.trim())) {
+                throw new CustomException("Customers can only create rides for themselves", HttpStatus.FORBIDDEN);
+            }
+
+            return requestedUser;
+        }
+
         if ("ROLE_CUSTOMER".equals(actorRole)) {
             return actor;
         }
 
         if ("ROLE_DISPATCHER".equals(actorRole) || "ROLE_ADMIN".equals(actorRole)) {
-            throw new CustomException("customerUserId is required when creating rides as dispatcher/admin", HttpStatus.BAD_REQUEST);
+            throw new CustomException("customerUserId or customerEmail is required when creating rides as dispatcher/admin", HttpStatus.BAD_REQUEST);
         }
 
         throw new CustomException("Only customers, dispatchers, or admins can create rides", HttpStatus.FORBIDDEN);
@@ -139,6 +155,7 @@ public class RideService {
                 .id(ride.getId())
                 .pickupLocation(ride.getPickupLocation())
                 .dropLocation(ride.getDropLocation())
+                .fare(ride.getFare())
             .interCity(ride.isInterCity())
                 .status(ride.getStatus().name())
                 .driverId(ride.getDriver() != null ? ride.getDriver().getId() : null)

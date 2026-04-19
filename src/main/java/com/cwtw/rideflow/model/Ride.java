@@ -3,6 +3,7 @@ package com.cwtw.rideflow.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -28,6 +29,9 @@ public class Ride {
 
     @Column(nullable = false)
     private boolean interCity;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal fare;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
